@@ -1,4 +1,4 @@
-module github.com/vladlim/auth-service-practice/utils
+module github.com/vladlim/auth-service-practice/utils/db/psql
 
 go 1.24.2
 
