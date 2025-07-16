@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/vladlim/auth-service-practice/utils/db/psql"
+	"github.com/vladlim/utils/db/psql"
 	"gopkg.in/yaml.v3"
 )
 

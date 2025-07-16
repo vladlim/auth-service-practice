@@ -6,7 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/vladlim/auth-service-practice/auth/internal/repository/models"
-	"github.com/vladlim/auth-service-practice/utils/db/psql"
+	"github.com/vladlim/utils/db/psql"
 )
 
 type Storage struct {
