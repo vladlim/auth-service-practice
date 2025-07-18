@@ -1,24 +1,26 @@
 package server
 
-import (
-	"github.com/vladlim/auth-service-practice/auth/internal/providers/people"
-)
+import "github.com/vladlim/auth-service-practice/auth/internal/providers/auth"
 
-type Person struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
+type RegisterUserData struct {
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
-func ServerPerson2ProviderPerson(person Person) people.Person {
-	return people.Person{
-		ID:       person.ID,
-		Username: person.Username,
+func ServerRegisterReq2Provider(req RegisterUserData) auth.RegisterUserData {
+	return auth.RegisterUserData{
+		Username:  req.Username,
+		Email:     req.Email,
+		Password:  req.Password,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
 	}
 }
 
-func ProviderPerson2ServerPerson(person people.Person) Person {
-	return Person{
-		ID:       person.ID,
-		Username: person.Username,
-	}
+type LoginUserData struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }

@@ -1,40 +1,92 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/vladlim/auth-service-practice/auth/internal/providers/auth"
 )
+
+func (s *Server) registerUserHandler(w http.ResponseWriter, r *http.Request) {
+	var req RegisterUserData
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		s.respondWithError(w, http.StatusBadRequest, "Username, email, password are required")
+		return
+	}
+
+	userID, err := s.provider.RegisterUser(r.Context(), ServerRegisterReq2Provider(req))
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrEmailExists):
+			s.respondWithError(w, http.StatusConflict, "email exists")
+		case errors.Is(err, auth.ErrUsernameExists):
+			s.respondWithError(w, http.StatusConflict, "username exists")
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	s.respondWithJSON(w, http.StatusCreated, userID)
+}
+
+func (s *Server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
+	var req LoginUserData
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if req.Login == "" || req.Password == "" {
+		s.respondWithError(w, http.StatusBadRequest, "login and password are required")
+		return
+	}
+
+	userID, err := s.provider.LoginUser(r.Context(), req.Login, req.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, auth.ErrIncorrectPassword):
+			s.respondWithError(w, http.StatusUnauthorized, "incorrect password")
+		case errors.Is(err, auth.ErrUserNotFound):
+			s.respondWithError(w, http.StatusNotFound, "user not found")
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	s.respondWithJSON(w, http.StatusOK, userID)
+}
 
 func (s *Server) pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }
 
-func (s *Server) getPeopleHandler(w http.ResponseWriter, r *http.Request) {
-	people, err := s.provider.GetPeople(context.Background())
-	if err != nil {
+// Responces:
+func setCommonHeaders(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+}
+
+func (s *Server) respondWithError(w http.ResponseWriter, code int, message string) {
+	s.respondWithJSON(w, code, map[string]string{"error": message})
+}
+
+func (s *Server) respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	setCommonHeaders(w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Something went wrong: " + err.Error()))
-		return
+		w.Write([]byte("Failed to encode response"))
 	}
-	body, err := json.Marshal(people)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Something went wrong"))
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(body)
-}
-
-func (s *Server) getPersonHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-func (s *Server) addPersonHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-func (s *Server) updatePersonHandler(w http.ResponseWriter, r *http.Request) {
-}
-
-func (s *Server) deletePersonHandler(w http.ResponseWriter, r *http.Request) {
 }

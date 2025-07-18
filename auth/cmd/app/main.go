@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/vladlim/auth-service-practice/auth/internal/config"
-	"github.com/vladlim/auth-service-practice/auth/internal/providers/people"
+	"github.com/vladlim/auth-service-practice/auth/internal/providers/auth"
 	"github.com/vladlim/auth-service-practice/auth/internal/repository/facade"
 	"github.com/vladlim/auth-service-practice/auth/internal/repository/storage"
 	"github.com/vladlim/auth-service-practice/auth/internal/server"
@@ -24,7 +24,7 @@ func main() {
 
 	facade := facade.New(storage)
 
-	provider := people.New(facade)
+	provider := auth.New(facade)
 
 	s := server.New(conf, provider)
 	panic(s.Start())

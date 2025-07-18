@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/vladlim/auth-service-practice/auth/internal/repository/models"
+	storage "github.com/vladlim/auth-service-practice/auth/internal/repository/storage/queries"
 	"github.com/vladlim/utils/db/psql"
 )
 
@@ -26,6 +27,34 @@ func New(dbURL string, migrationsPath string) (Storage, error) {
 	return Storage{
 		db: db,
 	}, nil
+}
+
+func (s Storage) CreateUser(ctx context.Context, user models.RegisterUserData) (string, error) {
+	var userID string
+
+	err := s.db.QueryRowContext(ctx, storage.CreateUserQuery,
+		user.Username,
+		user.Email,
+		user.PasswordHash,
+		user.FirstName,
+		user.LastName,
+	).Scan(
+		&userID,
+	)
+
+	return userID, err
+}
+
+func (s Storage) FindUserByUsername(ctx context.Context, username string) (string, string, error) {
+	var userID, userPassword string
+	err := s.db.QueryRowContext(ctx, storage.FindUserByUsernameQuery, username).Scan(&userID, &userPassword)
+	return userID, userPassword, err
+}
+
+func (s Storage) FindUserByEmail(ctx context.Context, email string) (string, string, error) {
+	var userID, userPassword string
+	err := s.db.QueryRowContext(ctx, storage.FindUserByEmailQuery, email).Scan(&userID, &userPassword)
+	return userID, userPassword, err
 }
 
 func (s Storage) GetPeople(ctx context.Context) ([]models.Person, error) {

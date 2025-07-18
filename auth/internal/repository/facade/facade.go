@@ -7,7 +7,9 @@ import (
 )
 
 type Storage interface {
-	GetPeople(ctx context.Context) ([]models.Person, error)
+	CreateUser(ctx context.Context, user models.RegisterUserData) (string, error)
+	FindUserByUsername(ctx context.Context, username string) (string, string, error)
+	FindUserByEmail(ctx context.Context, email string) (string, string, error)
 }
 
 type Facade struct {
@@ -20,6 +22,14 @@ func New(storage Storage) Facade {
 	}
 }
 
-func (f Facade) GetPeople(ctx context.Context) ([]models.Person, error) {
-	return f.storage.GetPeople(ctx)
+func (f Facade) CreateUser(ctx context.Context, user models.RegisterUserData) (string, error) {
+	return f.storage.CreateUser(ctx, user)
+}
+
+func (f Facade) FindUserByUsername(ctx context.Context, username string) (string, string, error) {
+	return f.storage.FindUserByUsername(ctx, username)
+}
+
+func (f Facade) FindUserByEmail(ctx context.Context, email string) (string, string, error) {
+	return f.storage.FindUserByEmail(ctx, email)
 }

@@ -1,0 +1,100 @@
+openapi: 3.0.0
+info:
+  title: Auth Service API
+  description: API for user authentication and role management
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+    description: Development server
+
+paths:
+  /ping:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service is running
+          content:
+            text/plain:
+              example: pong
+
+  /auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+        '400':
+          description: Invalid request
+        '409':
+          description: Username or email already exists
+        '500':
+          description: Internal server error
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user_id:
+                    type: string
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid credentials
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, email, password, first_name, last_name]
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+    
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+        password:
+          type: string
