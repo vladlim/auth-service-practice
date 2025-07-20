@@ -18,6 +18,7 @@ type AuthProvider interface {
 type TokensProvider interface {
 	GenerateAccessToken(userID string) (Tokens, error)
 	GenerateRefreshToken(userID string) (Tokens, error)
+	ValidateRefreshToken(tokenString string) (*tokens.Claims, error)
 }
 
 type Server struct {
@@ -54,6 +55,7 @@ func (s *Server) setRouter() *http.ServeMux {
 	mux.HandleFunc("GET /ping", s.pingHandler)
 	mux.HandleFunc("POST /auth/register", s.registerUserHandler)
 	mux.HandleFunc("POST /auth/login", s.loginUserHandler)
+	mux.HandleFunc("POST /auth/refresh", s.refreshTokenHandler)
 	// mux.HandleFunc("GET /users/{id}", s.getUserByIdHandler)
 	// mux.HandleFunc("GET /users/email/{email}", s.getUserByEmailHandler)
 	// mux.HandleFunc("GET /students/{id}", s.getStudentByIdHandler)

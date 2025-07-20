@@ -116,6 +116,61 @@ func (s *Server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) refreshTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if req.RefreshToken == "" {
+		s.respondWithError(w, http.StatusBadRequest, "refresh token is required")
+		return
+	}
+
+	claims, err := s.tokensProvider.ValidateRefreshToken(req.RefreshToken)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrInvalidToken):
+			s.respondWithError(w, http.StatusUnauthorized, "invalid token")
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	accessToken, err := s.tokensProvider.GenerateAccessToken(claims.UserID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrAccessGenerate):
+			s.respondWithError(w, http.StatusConflict, "access generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	refreshToken, err := s.tokensProvider.GenerateRefreshToken(claims.UserID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrRefreshGenerate):
+			s.respondWithError(w, http.StatusConflict, "refresh generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	s.respondWithJSON(w, http.StatusCreated, Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
+}
+
 func (s *Server) pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }

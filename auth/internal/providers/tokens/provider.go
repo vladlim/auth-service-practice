@@ -1,6 +1,8 @@
 package tokens
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -36,7 +38,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func (p TokensProvider) GenerateAccessToken(userID string) (string, error) {
+func (p *TokensProvider) GenerateAccessToken(userID string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -51,7 +53,7 @@ func (p TokensProvider) GenerateAccessToken(userID string) (string, error) {
 	return accessToken, nil
 }
 
-func (p TokensProvider) GenerateRefreshToken(userID string) (string, error) {
+func (p *TokensProvider) GenerateRefreshToken(userID string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -64,4 +66,25 @@ func (p TokensProvider) GenerateRefreshToken(userID string) (string, error) {
 		return "", err
 	}
 	return refreshToken, nil
+}
+
+func (p *TokensProvider) ValidateRefreshToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(refreshPrivateKey), nil
+	})
+
+	log.Default().Println("[REFRESH TOKEN]:", token)
+
+	if err != nil {
+		return nil, fmt.Errorf("token parsing failed: %w", err)
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, ErrInvalidToken
 }
