@@ -7,23 +7,31 @@ import (
 
 	"github.com/vladlim/auth-service-practice/auth/internal/config"
 	"github.com/vladlim/auth-service-practice/auth/internal/providers/auth"
+	"github.com/vladlim/auth-service-practice/auth/internal/providers/tokens"
 )
 
-type Provider interface {
-	RegisterUser(ctx context.Context, user auth.RegisterUserData) (string, error)
+type AuthProvider interface {
+	RegisterUser(ctx context.Context, user auth.RegisterUserData) (string error)
 	LoginUser(ctx context.Context, login, password string) (string, error)
 }
 
-type Server struct {
-	server   http.Server
-	provider Provider
+type TokensProvider interface {
+	GenerateAccessToken(userID string) (Tokens, error)
+	GenerateRefreshToken(userID string) (Tokens, error)
 }
 
-func New(conf config.Config, provider Provider) *Server {
+type Server struct {
+	server         http.Server
+	authProvider   auth.AuthProvider
+	tokensProvider tokens.TokensProvider
+}
+
+func New(conf config.Config, authProvider auth.AuthProvider, tokensProvider tokens.TokensProvider) *Server {
 	s := new(Server)
 	s.server.Addr = fmt.Sprintf(":%d", conf.Port)
 	s.server.Handler = s.setRouter()
-	s.provider = provider
+	s.authProvider = authProvider
+	s.tokensProvider = tokensProvider
 	return s
 }
 
@@ -38,6 +46,8 @@ func New(conf config.Config, provider Provider) *Server {
 // GET		/teachers/{id}			Получить преподавателя по ID
 // GET		/teachers				Фильтрация преподавателей по университетам
 // GET		/roles/{id}				Получить роль пользователя по ID
+// POST		/admin/generate-key		Сгенерировать ключи
+// POST		/auth/refresh				Обновить токены
 
 func (s *Server) setRouter() *http.ServeMux {
 	mux := http.NewServeMux()

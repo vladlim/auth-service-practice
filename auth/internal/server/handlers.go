@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/vladlim/auth-service-practice/auth/internal/providers/auth"
+	"github.com/vladlim/auth-service-practice/auth/internal/providers/tokens"
 )
 
 func (s *Server) registerUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +22,7 @@ func (s *Server) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := s.provider.RegisterUser(r.Context(), ServerRegisterReq2Provider(req))
+	userID, err := s.authProvider.RegisterUser(r.Context(), ServerRegisterReq2Provider(req))
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrEmailExists):
@@ -34,7 +35,32 @@ func (s *Server) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.respondWithJSON(w, http.StatusCreated, userID)
+	accessToken, err := s.tokensProvider.GenerateAccessToken(userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrAccessGenerate):
+			s.respondWithError(w, http.StatusConflict, "access generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	refreshToken, err := s.tokensProvider.GenerateRefreshToken(userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrRefreshGenerate):
+			s.respondWithError(w, http.StatusConflict, "refresh generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	s.respondWithJSON(w, http.StatusCreated, Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
 }
 
 func (s *Server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +76,7 @@ func (s *Server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := s.provider.LoginUser(r.Context(), req.Login, req.Password)
+	userID, err := s.authProvider.LoginUser(r.Context(), req.Login, req.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrIncorrectPassword):
@@ -62,8 +88,32 @@ func (s *Server) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	accessToken, err := s.tokensProvider.GenerateAccessToken(userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrAccessGenerate):
+			s.respondWithError(w, http.StatusConflict, "access generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
 
-	s.respondWithJSON(w, http.StatusOK, userID)
+	refreshToken, err := s.tokensProvider.GenerateRefreshToken(userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, tokens.ErrRefreshGenerate):
+			s.respondWithError(w, http.StatusConflict, "refresh generate error: "+err.Error())
+		default:
+			s.respondWithError(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	s.respondWithJSON(w, http.StatusCreated, Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
 }
 
 func (s *Server) pingHandler(w http.ResponseWriter, r *http.Request) {

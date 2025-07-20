@@ -10,6 +10,12 @@ db:
   ssl: "disable"
   migrations_path: file://migrations
 
+access_secret:
+  "access_secret"
+
+refresh_secret:
+  "refresh_secret"
+
 clients:
   example:
     url: http://localhost:8080

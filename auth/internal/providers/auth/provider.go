@@ -16,17 +16,17 @@ type Repository interface {
 	FindUserByEmail(ctx context.Context, email string) (string, string, error)
 }
 
-type Provider struct {
+type AuthProvider struct {
 	repository Repository
 }
 
-func New(repository Repository) Provider {
-	return Provider{
+func New(repository Repository) AuthProvider {
+	return AuthProvider{
 		repository: repository,
 	}
 }
 
-func (p Provider) RegisterUser(ctx context.Context, user RegisterUserData) (string, error) {
+func (p AuthProvider) RegisterUser(ctx context.Context, user RegisterUserData) (string, error) {
 	userConv := ProviderRegisterReq2DB(user)
 	if _, _, err := p.repository.FindUserByUsername(ctx, userConv.Username); err == nil {
 		return "", ErrUsernameExists
@@ -52,7 +52,7 @@ func (p Provider) RegisterUser(ctx context.Context, user RegisterUserData) (stri
 	return userID, err
 }
 
-func (p Provider) LoginUser(ctx context.Context, login, password string) (string, error) {
+func (p AuthProvider) LoginUser(ctx context.Context, login, password string) (string, error) {
 	var userID, userPassword string
 	var err error
 	if strings.Contains(login, "@") {
