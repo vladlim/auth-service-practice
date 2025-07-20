@@ -56,6 +56,7 @@ func (s *Server) setRouter() *http.ServeMux {
 	mux.HandleFunc("POST /auth/register", s.registerUserHandler)
 	mux.HandleFunc("POST /auth/login", s.loginUserHandler)
 	mux.HandleFunc("POST /auth/refresh", s.refreshTokenHandler)
+	mux.HandleFunc("POST /admin/generate-key", s.generateKeyHandler)
 	// mux.HandleFunc("GET /users/{id}", s.getUserByIdHandler)
 	// mux.HandleFunc("GET /users/email/{email}", s.getUserByEmailHandler)
 	// mux.HandleFunc("GET /students/{id}", s.getStudentByIdHandler)

@@ -38,6 +38,8 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// Auth tokens...
+
 func (p *TokensProvider) GenerateAccessToken(userID string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
@@ -87,4 +89,51 @@ func (p *TokensProvider) ValidateRefreshToken(tokenString string) (*Claims, erro
 	}
 
 	return nil, ErrInvalidToken
+}
+
+// License keys(tokens)...
+
+func (p *TokensProvider) GenerateRoleKey(
+	role string,
+	groupID string,
+	universityID string,
+	enrollmentYear int,
+	degree string,
+) (string, error) {
+	claims := jwt.MapClaims{
+		"role":          role,
+		"university_id": universityID,
+	}
+
+	switch role {
+	case "student":
+		claims["group_id"] = groupID
+		claims["enrollment_year"] = enrollmentYear
+	case "teacher":
+		claims["degree"] = degree
+	default:
+		return "", ErrInvalidRole
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(refreshPrivateKey))
+}
+
+func (p *TokensProvider) ValidateRoleKey(key string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(key, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(refreshPrivateKey), nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("key parsing failed: %w", err)
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, ErrInvalidKey
 }

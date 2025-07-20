@@ -99,6 +99,38 @@ paths:
                     type: string
         '500':
           description: Internal server error
+  
+  /admin/generate-key:
+    post:
+      summary: Generate key by role
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/GenerateStudentKeyRequest'
+              - $ref: '#/components/schemas/GenerateTeacherKeyRequest'
+            discriminator:
+              propertyName: role
+
+      responses:
+        '200':
+          description: Key successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedKeyResponse'
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Unauthorized (admin only)
+        '403':
+          description: Forbidden (insufficient permissions)
+        '500':
+          description: Internal server error
 
 components:
   schemas:
@@ -133,3 +165,60 @@ components:
       properties:
         refresh_token:
           type: string
+    
+    GenerateStudentKeyRequest:
+      type: object
+      required: [role, university_id, group_id, enrollment_year]
+      properties:
+        role:
+          type: string
+          enum: [student]
+          description: Role type
+          example: "student"
+        university_id:
+          type: string
+          format: uuid
+          description: University identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        group_id:
+          type: string
+          format: uuid
+          description: Group identifier
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        enrollment_year:
+          type: integer
+          description: Year of enrollment
+          example: 2023
+
+    GenerateTeacherKeyRequest:
+      type: object
+      required: [role, university_id, degree]
+      properties:
+        role:
+          type: string
+          enum: [teacher]
+          description: Role type
+          example: "teacher"
+        university_id:
+          type: string
+          format: uuid
+          description: University identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        degree:
+          type: string
+          description: Academic degree
+          example: "PhD"
+
+    GeneratedKeyResponse:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Generated activation key (JWT format)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
