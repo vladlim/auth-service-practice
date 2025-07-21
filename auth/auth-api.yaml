@@ -1,0 +1,487 @@
+openapi: 3.0.0
+info:
+  title: Auth Service API
+  description: API for user authentication and role management
+  version: 1.0.0
+servers:
+  - url: http://localhost:8081
+    description: Development server
+
+paths:
+  /ping:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service is running
+          content:
+            text/plain:
+              example: pong
+
+  /auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                      type: string
+                  refresh_token:
+                      type: string
+        '400':
+          description: Invalid request
+        '409':
+          description: Username or email already exists
+        '500':
+          description: Internal server error
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid credentials
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+    
+  /auth/refresh:
+    post:
+      summary: Refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Successful refresh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+        '500':
+          description: Internal server error
+  
+  /admin/generate-key:
+    post:
+      summary: Generate key by role
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: '#/components/schemas/GenerateStudentKeyRequest'
+              - $ref: '#/components/schemas/GenerateTeacherKeyRequest'
+            discriminator:
+              propertyName: role
+
+      responses:
+        '200':
+          description: Key successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedKeyResponse'
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Unauthorized (admin only)
+        '403':
+          description: Forbidden (insufficient permissions)
+        '500':
+          description: Internal server error
+
+  /auth/activate-key:
+    post:
+      summary: Activate key by role
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              '#/components/schemas/ActivateKeyRequest'
+            discriminator:
+              propertyName: role
+
+      responses:
+        '200':
+          description: Key successfully activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivateKeyResponse'
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Unauthorized (admin only)
+        '500':
+          description: Internal server error
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /users/email/{email}:
+    get:
+      summary: Get user by email
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /students/{id}:
+    get:
+      summary: Get student by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Student data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Student not found
+        '500':
+          description: Internal server error
+
+  /groups/{id}/students:
+    get:
+      summary: Get students by group ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of students in group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Group not found
+        '500':
+          description: Internal server error
+
+  /teachers/{id}:
+    get:
+      summary: Get teacher by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Teacher data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+        '404':
+          description: Teacher not found
+        '500':
+          description: Internal server error
+
+  /universities/{id}/teachers:
+    get:
+      summary: Get teachers by university ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of teachers in university
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeacherResponse'
+        '404':
+          description: University not found
+        '500':
+          description: Internal server error
+
+  /roles/{id}:
+    get:
+      summary: Get user roles by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, email, password, first_name, last_name]
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+    
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+    
+    RefreshRequest:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+    
+    GenerateStudentKeyRequest:
+      type: object
+      required: [role, university_id, group_id, enrollment_year]
+      properties:
+        role:
+          type: string
+          enum: [student]
+          description: Role type
+          example: "student"
+        university_id:
+          type: string
+          format: uuid
+          description: University identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        group_id:
+          type: string
+          format: uuid
+          description: Group identifier
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        enrollment_year:
+          type: integer
+          description: Year of enrollment
+          example: 2023
+
+    GenerateTeacherKeyRequest:
+      type: object
+      required: [role, university_id, degree]
+      properties:
+        role:
+          type: string
+          enum: [teacher]
+          description: Role type
+          example: "teacher"
+        university_id:
+          type: string
+          format: uuid
+          description: University identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        degree:
+          type: string
+          description: Academic degree
+          example: "PhD"
+
+    GeneratedKeyResponse:
+      type: object
+      properties:
+        key:
+          type: string
+          description: Generated activation key (JWT format)
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    
+    ActivateKeyRequest:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    ActivatedKeyResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "success"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    StudentResponse:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+        GroupID:
+          type: string
+          format: uuid
+        UniversityID:
+          type: string
+          format: uuid
+        EnrollmentYear:
+          type: integer
+        User:
+          $ref: '#/components/schemas/UserResponse'
+
+    TeacherResponse:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+        UniversityID:
+          type: string
+          format: uuid
+        Degree:
+          type: string
+        User:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserRolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+        user_id:
+          type: string
+          format: uuid
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
