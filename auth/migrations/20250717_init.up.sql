@@ -28,14 +28,14 @@ CREATE TABLE user_roles (
 CREATE TABLE teachers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    university_id UUID,  -- Внешний ключ, но без REFERENCES
+    university_id UUID,
     degree TEXT
 );
 
 CREATE TABLE students (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    group_id UUID,       -- Внешний ключ, но без REFERENCES
-    university_id UUID,  -- Внешний ключ, но без REFERENCES
+    group_id UUID,
+    university_id UUID,
     enrollment_year INT
 );

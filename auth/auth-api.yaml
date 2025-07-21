@@ -132,6 +132,193 @@ paths:
         '500':
           description: Internal server error
 
+  /auth/activate-key:
+    post:
+      summary: Activate key by role
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              '#/components/schemas/ActivateKeyRequest'
+            discriminator:
+              propertyName: role
+
+      responses:
+        '200':
+          description: Key successfully activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivateKeyResponse'
+        '400':
+          description: Invalid request parameters
+        '401':
+          description: Unauthorized (admin only)
+        '500':
+          description: Internal server error
+
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /users/email/{email}:
+    get:
+      summary: Get user by email
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+  /students/{id}:
+    get:
+      summary: Get student by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Student data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Student not found
+        '500':
+          description: Internal server error
+
+  /groups/{id}/students:
+    get:
+      summary: Get students by group ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of students in group
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentResponse'
+        '404':
+          description: Group not found
+        '500':
+          description: Internal server error
+
+  /teachers/{id}:
+    get:
+      summary: Get teacher by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Teacher data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherResponse'
+        '404':
+          description: Teacher not found
+        '500':
+          description: Internal server error
+
+  /universities/{id}/teachers:
+    get:
+      summary: Get teachers by university ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of teachers in university
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeacherResponse'
+        '404':
+          description: University not found
+        '500':
+          description: Internal server error
+
+  /roles/{id}:
+    get:
+      summary: Get user roles by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRolesResponse'
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+
+
 components:
   schemas:
     RegisterRequest:
@@ -216,6 +403,82 @@ components:
           type: string
           description: Generated activation key (JWT format)
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    
+    ActivateKeyRequest:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    ActivatedKeyResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "success"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    StudentResponse:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+        GroupID:
+          type: string
+          format: uuid
+        UniversityID:
+          type: string
+          format: uuid
+        EnrollmentYear:
+          type: integer
+        User:
+          $ref: '#/components/schemas/UserResponse'
+
+    TeacherResponse:
+      type: object
+      properties:
+        ID:
+          type: string
+          format: uuid
+        UniversityID:
+          type: string
+          format: uuid
+        Degree:
+          type: string
+        User:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserRolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+        user_id:
+          type: string
+          format: uuid
 
   securitySchemes:
     bearerAuth:
