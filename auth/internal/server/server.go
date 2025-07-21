@@ -42,20 +42,6 @@ func New(conf config.Config, authProvider auth.AuthProvider, tokensProvider toke
 	return s
 }
 
-// Метод	Роут					Назначение
-// POST		/auth/register			Регистрация нового пользователя
-// POST		/auth/login				Вход в систему
-// POST		/auth/logout			Выход из системы (очистка сессии или куки)
-// GET		/users/{id}				Получить пользователя по ID
-// GET		/users/email/{email}	Получить пользователя по email
-// GET		/students/{id}			Получить студента по ID
-// GET		/students				Фильтрация студентов по группам (через query)
-// GET		/teachers/{id}			Получить преподавателя по ID
-// GET		/teachers				Фильтрация преподавателей по университетам
-// GET		/roles/{id}				Получить роль пользователя по ID
-// POST		/admin/generate-key		Сгенерировать ключи
-// POST		/auth/refresh				Обновить токены
-
 func (s *Server) setRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
